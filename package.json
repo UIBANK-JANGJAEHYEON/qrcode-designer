@@ -12,7 +12,7 @@
     "win": {
       "target": "nsis"
     },
-    "publish": []
+    "publish": false
   },
   "devDependencies": {
     "electron": "^29.0.0",
