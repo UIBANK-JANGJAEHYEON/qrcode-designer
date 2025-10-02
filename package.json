@@ -6,14 +6,21 @@
     "start": "electron .",
     "build": "electron-builder"
   },
-  "build": {
-    "appId": "com.example.testapp",
-    "productName": "TestElectronApp",
-    "win": {
-      "target": "nsis"
-    },
-    "publish": false
+"build": {
+  "appId": "com.example.testapp",
+  "productName": "TestElectronApp",
+  "win": {
+    "target": "nsis"
   },
+  "linux": {
+    "target": ["AppImage"]
+  },
+  "publish": [
+    {
+      "provider": "github"
+    }
+  ]
+},
   "devDependencies": {
     "electron": "^29.0.0",
     "electron-builder": "^24.0.0"
