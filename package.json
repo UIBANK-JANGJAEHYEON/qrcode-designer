@@ -10,7 +10,7 @@
     "watch-ts": "tsc --watch",
     "watch": "concurrently \"npm run watch-ts\" \"npm run watch-html\"",
     "start": "npm run copy-html && tsc && electron .",
-    "dev": "concurrently \"npm run watch\" \"electron .\"",
+    "dev": "cross-env NODE_ENV=development concurrently \"npm run watch\" \"electron .\"",
     "build": "npm run copy-html && tsc && electron-builder"
   },
   "build": {
@@ -42,10 +42,10 @@
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.2.1",
     "cpy-cli": "^6.0.0",
+    "cross-env": "^10.1.0",
     "electron": "^29.0.0",
     "electron-builder": "^24.0.0",
     "electron-reload": "^2.0.0-alpha.1",
     "typescript": "^5.9.3"
   }
 }
-
