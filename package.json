@@ -1,25 +1,51 @@
 {
   "name": "test-electron-app",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "dist/main.js",
+  "description": "Your app description",
+  "author": "Your Name <jang.jaehyeon@uibank.co.jp>",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder"
+    "copy-html": "cpy src/index.html dist/ --flat",
+    "watch-html": "chokidar 'src/index.html' -c 'npm run copy-html'",
+    "watch-ts": "tsc --watch",
+    "watch": "concurrently \"npm run watch-ts\" \"npm run watch-html\"",
+    "start": "npm run copy-html && tsc && electron .",
+    "dev": "concurrently \"npm run watch\" \"electron .\"",
+    "build": "npm run copy-html && tsc && electron-builder"
   },
-"build": {
-  "appId": "com.example.testapp",
-  "productName": "TestElectronApp",
-  "win": {
-    "target": "nsis"
+  "build": {
+    "appId": "com.example.testapp",
+    "productName": "TestElectronApp",
+    "files": [
+      "dist/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ]
   },
-  "publish": [
-    {
-      "provider": "github"
-    }
-  ]
-},
   "devDependencies": {
+    "@types/node": "^24.6.2",
+    "chokidar-cli": "^3.0.0",
+    "concurrently": "^9.2.1",
+    "cpy-cli": "^6.0.0",
     "electron": "^29.0.0",
-    "electron-builder": "^24.0.0"
+    "electron-builder": "^24.0.0",
+    "electron-reload": "^2.0.0-alpha.1",
+    "typescript": "^5.9.3"
   }
 }
+
