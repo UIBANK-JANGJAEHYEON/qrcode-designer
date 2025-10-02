@@ -30,7 +30,11 @@
     },
     "win": {
       "target": "nsis",
-      "createDesktopShortcut": true
+    },
+    "nsis": {
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TestElectronApp"
     },
     "publish": [
       {
