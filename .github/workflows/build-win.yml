@@ -1,16 +1,16 @@
-name: Build Windows Electron App
+name: Build and Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*.*.*" # 버전 태그 푸시할 때만 동작 (ex: v1.0.0)
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -23,8 +23,19 @@ jobs:
       - name: Build Electron app
         run: npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: windows-build
-          path: dist/
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.exe
+            dist/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
