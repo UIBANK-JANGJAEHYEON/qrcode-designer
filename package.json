@@ -29,7 +29,8 @@
       ]
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "createDesktopShortcut": true
     },
     "publish": [
       {
