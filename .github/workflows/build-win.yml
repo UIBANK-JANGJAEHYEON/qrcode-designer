@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - "v*.*.*" # 태그 푸시 시만 실행
+      - "v*.*.*" # 태그 푸시 시에만 실행
 
 jobs:
   build:
@@ -23,13 +23,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4. Electron 앱 빌드 (GH_TOKEN 전달)
+      # 4. Electron 앱 빌드
       - name: Build Electron App
         run: npm run electron:build
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      # 5. GitHub 릴리즈 생성
+      # 5. GitHub Release 생성
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -38,13 +38,12 @@ jobs:
           name: ${{ github.ref_name }}
           body: "Automated Windows build release"
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }} # PAT 사용
 
       # 6. 빌드 결과물 업로드
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            release/*.exe
+          files: release/*.exe
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # PAT 사용
