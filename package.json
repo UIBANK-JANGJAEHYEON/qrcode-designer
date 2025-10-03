@@ -13,7 +13,8 @@
   },
   "build": {
     "appId": "com.example.qrtemplate",
-    "productName": "QR Template App",
+    "productName": "QR Code Designer",
+    "icon": "./public/assets/icon.png",
     "directories": {
       "buildResources": "public/assets",
       "output": "release"

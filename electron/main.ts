@@ -8,6 +8,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: path.join(__dirname, "../public/assets/icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"), // preload 연결
       contextIsolation: true,
@@ -18,11 +19,9 @@ function createWindow() {
   const isDev = process.env.NODE_ENV === "development";
 
   if (isDev) {
-    console.log("개발환경");
     mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
-    console.log("개발환경 아님");
     mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
   }
 }
