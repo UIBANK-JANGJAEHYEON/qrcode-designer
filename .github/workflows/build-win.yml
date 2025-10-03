@@ -38,7 +38,7 @@ jobs:
           name: ${{ github.ref_name }}
           body: "Automated Windows build release"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       # 6. 빌드 결과물 업로드
       - name: Upload Release Assets
