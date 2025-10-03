@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest # 여기서 윈도우 환경으로 변경
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -15,29 +15,27 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "20"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build Electron app (Windows)
-        run: npm run build
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Build Electron App
+        run: npm run electron:build
 
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: "Automated Windows build release"
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Release Asset
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            dist/*.exe
-            dist/*.msi
+          files: release/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

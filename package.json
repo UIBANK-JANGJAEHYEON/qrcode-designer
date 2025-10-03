@@ -1,49 +1,41 @@
 {
-  "name": "test-electron-app",
+  "name": "qr-template-app",
   "version": "1.0.0",
-  "main": "dist/main.js",
-  "description": "Your app description",
-  "author": "Your Name <jang.jaehyeon@uibank.co.jp>",
+  "main": "dist-electron/main.js",
   "scripts": {
-    "copy-html": "cpy src/index.html dist/ --flat",
-    "watch-html": "chokidar 'src/index.html' -c 'npm run copy-html'",
-    "watch-ts": "tsc --watch",
-    "watch": "concurrently \"npm run watch-ts\" \"npm run watch-html\"",
-    "start": "npm run copy-html && tsc && electron .",
-    "dev": "cross-env NODE_ENV=development concurrently \"npm run watch\" \"electron .\"",
-    "build": "npm run copy-html && tsc && electron-builder"
+    "build": "vite build",
+    "preview": "vite preview",
+    "compile-electron": "tsc -p tsconfig.json",
+    "electron": "electron ./dist-electron/main.js",
+    "electron:dev": "concurrently -k \"cross-env NODE_ENV=development vite\" \"cross-env NODE_ENV=development npm run electron-start\"",
+    "electron-start": "npm run compile-electron && electron ./dist-electron/main.js",
+    "electron:build": "npm run build && npm run compile-electron && electron-builder"
   },
   "build": {
-    "appId": "com.example.testapp",
-    "productName": "TestElectronApp",
-    "files": [
-      "dist/**/*"
-    ],
+    "appId": "com.example.qrtemplate",
+    "productName": "QR Template App",
     "directories": {
-      "buildResources": "assets"
+      "buildResources": "public/assets",
+      "output": "release"
     },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ]
-    },
-    "win": {
-      "target": "nsis"
-    },
-    "nsis": {
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "TestElectronApp"
-    },
-    "publish": [
-      {
-        "provider": "github"
-      }
-    ]
+    "files": [
+      "dist/**",
+      "dist-electron/**",
+      "node_modules/**",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "public/assets", "to": "assets" }
+    ],
+    "mac": { "target": ["dmg", "zip"] },
+    "win": { "target": ["nsis", "zip"] }
   },
   "devDependencies": {
     "@types/node": "^24.6.2",
+    "@types/rc-slider": "^9.3.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.2.1",
     "cpy-cli": "^6.0.0",
@@ -51,6 +43,18 @@
     "electron": "^29.0.0",
     "electron-builder": "^24.0.0",
     "electron-reload": "^2.0.0-alpha.1",
-    "typescript": "^5.9.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.8"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jsqr": "^1.4.0",
+    "pdfjs-dist": "^5.4.149",
+    "qrcode": "^1.5.4",
+    "rc-slider": "^11.1.9",
+    "react": "^19.2.0",
+    "react-color": "^2.19.3",
+    "react-dom": "^19.2.0"
   }
 }
