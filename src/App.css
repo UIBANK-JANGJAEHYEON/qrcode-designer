@@ -1,0 +1,23 @@
+.container {
+  display: flex;
+  background-color: silver;
+}
+
+.customize-box {
+  flex: 1;
+}
+
+.customize-field-item-title {
+}
+
+.preview-box {
+  flex: 2;
+}
+
+.preview-image {
+  max-width: 100%;
+}
+
+.qr-code-information {
+  display: flex;
+}

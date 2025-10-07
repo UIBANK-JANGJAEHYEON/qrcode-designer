@@ -1,14 +1,24 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getDocument, GlobalWorkerOptions, PDFPageProxy } from "pdfjs-dist";
-import QRCode from "qrcode";
+// import QRCode from "qrcode";
+import QRCodeStyling from "qr-code-styling";
 import jsQR from "jsqr";
 import { SketchPicker } from "react-color";
+import "./App.css";
 
 // PDF.js 워커 설정 (개발/빌드 환경 모두 안전)
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.mjs",
   import.meta.url
 ).toString();
+
+// template의 타입을 정의
+type Template = {
+  src: string;
+  qrX: number;
+  qrY: number;
+  qrSize: number;
+};
 
 // ColorResult 타입 정의
 interface ColorResult {
@@ -21,25 +31,172 @@ interface ColorResult {
 }
 
 const App: React.FC = () => {
+  // 템플릿에 관한 정보를 모아 둠.
+  const templates: { [key: string]: Template } = {
+    template1: {
+      src: new URL("../public/assets/template1.png", import.meta.url).href,
+      qrX: 324,
+      qrY: 750,
+      qrSize: 1100,
+    },
+    template2: {
+      src: new URL("../public/assets/template2.png", import.meta.url).href,
+      qrX: 324,
+      qrY: 750,
+      qrSize: 1100,
+    },
+  };
+  const logoSrc = new URL("../public/assets/logo.png", import.meta.url).href;
+
   const [template, setTemplate] = useState<"template1" | "template2">(
     "template1"
   );
   const [qrColor, setQrColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#ffffff");
-  const [logoSize, setLogoSize] = useState(0.3);
+  const [logoSize, setLogoSize] = useState(0.35);
   const [qrShape, setQrShape] = useState<"square" | "round">("square");
   const [preview, setPreview] = useState<string | null>(null);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [imgSrc, setImgSrc] = useState(templates[template].src);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 템플릿 & 로고 URL (개발/빌드 환경 모두 안전)
-  const templateMap = {
-    template1: new URL("../public/assets/template1.png", import.meta.url).href,
-    template2: new URL("../public/assets/template2.png", import.meta.url).href,
-  };
-  const logoSrc = new URL("../public/assets/logo.png", import.meta.url).href;
+  const generateQrOnTemplate = async (): Promise<string | null> => {
+    if (!canvasRef.current) return null;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d")!;
+    const currentTemplate = templates[template];
 
-  // PDF 처리
+    // 1️⃣ 템플릿 이미지 로딩
+    const templateImg = new Image();
+    templateImg.crossOrigin = "anonymous";
+    templateImg.src = currentTemplate.src;
+    await new Promise<void>((resolve, reject) => {
+      templateImg.onload = () => resolve();
+      templateImg.onerror = () =>
+        reject(new Error(`템플릿 로딩 실패: ${templateImg.src}`));
+    });
+
+    canvas.width = templateImg.width;
+    canvas.height = templateImg.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(templateImg, 0, 0);
+
+    // 2️⃣ QR 코드 생성 (로고 없이)
+    const qrSize = currentTemplate.qrSize;
+    const qrX = currentTemplate.qrX;
+    const qrY = currentTemplate.qrY;
+
+    const qrCode = new QRCodeStyling({
+      width: qrSize,
+      height: qrSize,
+      data: qrCodeData ?? "",
+      dotsOptions: {
+        color: qrColor ?? "#000000",
+        type: qrShape === "square" ? "square" : "rounded",
+      },
+      cornersSquareOptions: {
+        type: "extra-rounded",
+        color: qrColor ?? "#000000",
+      },
+      backgroundOptions: {
+        color: "#FFFFFF",
+      },
+      qrOptions: {
+        errorCorrectionLevel: "H",
+      },
+    });
+
+    // QR Blob → Canvas로 변환
+    const qrBlob = (await qrCode.getRawData("png")) as Blob;
+    const qrImg = new Image();
+    qrImg.crossOrigin = "anonymous";
+    qrImg.src = URL.createObjectURL(qrBlob);
+    await new Promise<void>((resolve) => (qrImg.onload = () => resolve()));
+
+    const qrCanvas = document.createElement("canvas");
+    qrCanvas.width = qrImg.width;
+    qrCanvas.height = qrImg.height;
+    qrCanvas.getContext("2d")!.drawImage(qrImg, 0, 0);
+
+    // 3️⃣ QR 먼저 캔버스에 그리기
+    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+    // 4️⃣ 로고 배경 라운드 사각형
+    const logoDrawSize = qrSize * logoSize;
+    const logoX = qrX + qrSize / 2 - logoDrawSize / 2;
+    const logoY = qrY + qrSize / 2 - logoDrawSize / 2;
+    const cornerRadius = logoDrawSize * 0.2;
+
+    ctx.save();
+    ctx.fillStyle = "white";
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(logoX, logoY, logoDrawSize, logoDrawSize, cornerRadius);
+      ctx.fill();
+    } else {
+      // fallback
+      ctx.beginPath();
+      ctx.moveTo(logoX + cornerRadius, logoY);
+      ctx.lineTo(logoX + logoDrawSize - cornerRadius, logoY);
+      ctx.quadraticCurveTo(
+        logoX + logoDrawSize,
+        logoY,
+        logoX + logoDrawSize,
+        logoY + cornerRadius
+      );
+      ctx.lineTo(logoX + logoDrawSize, logoY + logoDrawSize - cornerRadius);
+      ctx.quadraticCurveTo(
+        logoX + logoDrawSize,
+        logoY + logoDrawSize,
+        logoX + logoDrawSize - cornerRadius,
+        logoY + logoDrawSize
+      );
+      ctx.lineTo(logoX + cornerRadius, logoY + logoDrawSize);
+      ctx.quadraticCurveTo(
+        logoX,
+        logoY + logoDrawSize,
+        logoX,
+        logoY + logoDrawSize - cornerRadius
+      );
+      ctx.lineTo(logoX, logoY + cornerRadius);
+      ctx.quadraticCurveTo(logoX, logoY, logoX + cornerRadius, logoY);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 5️⃣ 로고 그리기
+    if (logoSrc) {
+      const logoImg = new Image();
+      logoImg.crossOrigin = "anonymous";
+      logoImg.src = logoSrc;
+      await new Promise<void>((resolve, reject) => {
+        logoImg.onload = () => resolve();
+        logoImg.onerror = () => reject(new Error("로고 로딩 실패"));
+      });
+      ctx.drawImage(logoImg, logoX, logoY, logoDrawSize, logoDrawSize);
+    }
+
+    // 6️⃣ 최종 PNG 반환
+    return canvas.toDataURL("image/png");
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) handlePdf(e.target.files[0]);
+  };
+
+  // 이미지 저장
+  const handleSave = () => {
+    if (qrCodeData === null) {
+      alert("qr코드를 먼저 업로드하세요!!!");
+      return;
+    }
+
+    window.electronAPI.saveImage(imgSrc);
+  };
+
+  // pdf를 이미지화하고 qr코드를 인식하고 분석하는 것 까지
   const handlePdf = async (file: File) => {
     if (file.type !== "application/pdf") return;
 
@@ -64,66 +221,22 @@ const App: React.FC = () => {
 
     const code = jsQR(imageData.data, tempCanvas.width, tempCanvas.height);
     if (code) {
-      generateQrOnTemplate(code.data);
+      // generateQrOnTemplate(code.data);
+      setQrCodeData(code.data);
     } else {
       alert("QR 코드를 찾을 수 없습니다.");
     }
   };
 
-  // QR + 템플릿 합성
-  const generateQrOnTemplate = async (data: string) => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-
-    const templateImg = new Image();
-    templateImg.src = templateMap[template];
-    await new Promise<void>((res, rej) => {
-      templateImg.onload = () => res();
-      templateImg.onerror = () =>
-        rej(new Error(`템플릿 로딩 실패: ${templateImg.src}`));
-    });
-
-    canvas.width = templateImg.width;
-    canvas.height = templateImg.height;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(templateImg, 0, 0);
-
-    // QR 생성
-    const qrCanvas = document.createElement("canvas");
-    await QRCode.toCanvas(qrCanvas, data, {
-      color: { dark: qrColor, light: bgColor },
-      width: 300,
-      margin: 1,
-    });
-
-    const qrX = 200;
-    const qrY = 200;
-    const qrSize = 300;
-
-    if (qrShape === "square") {
-      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-    } else {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(qrX + qrSize / 2, qrY + qrSize / 2, qrSize / 2, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-      ctx.restore();
+  const renderPreviewImage = async () => {
+    // qr코드가 아직 업로드되지 않은 상태에서는 템플릿 이미지만 나오게
+    if (qrCodeData === null) {
+      setImgSrc(templates[template].src);
+      return;
     }
 
-    const logoImg = new Image();
-    logoImg.src = logoSrc;
-    await new Promise<void>((res, rej) => {
-      logoImg.onload = () => res();
-      logoImg.onerror = () => rej(new Error(`로고 로딩 실패: ${logoImg.src}`));
-    });
-
-    const logoDrawSize = qrSize * logoSize;
-    const logoX = qrX + qrSize / 2 - logoDrawSize / 2;
-    const logoY = qrY + qrSize / 2 - logoDrawSize / 2;
-    ctx.drawImage(logoImg, logoX, logoY, logoDrawSize, logoDrawSize);
-
-    setPreview(canvas.toDataURL("image/png"));
+    const previewImgSrc = (await generateQrOnTemplate()) as string;
+    setImgSrc(previewImgSrc);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -131,135 +244,62 @@ const App: React.FC = () => {
     if (e.dataTransfer.files.length > 0) handlePdf(e.dataTransfer.files[0]);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) handlePdf(e.target.files[0]);
+  // 이거 무조건 해줘야 드롭 이벤트가 발동된다.
+  const handledragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
   };
 
-  const handleSave = async () => {
-    if (preview) await window.electronAPI.saveImage(preview);
-  };
+  // 각 값들이 바뀌면 프리뷰 이미지를 갱신을 위해.
+  useEffect(() => {
+    renderPreviewImage();
+  }, [template, qrCodeData]);
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>QR 템플릿 생성기</h1>
-
-      <div style={{ margin: "10px 0" }}>
-        <label>
-          <input
-            type="radio"
-            name="template"
-            value="template1"
-            checked={template === "template1"}
-            onChange={() => setTemplate("template1")}
-          />
-          템플릿 1
-        </label>
-        <label style={{ marginLeft: "20px" }}>
-          <input
-            type="radio"
-            name="template"
-            value="template2"
-            checked={template === "template2"}
-            onChange={() => setTemplate("template2")}
-          />
-          템플릿 2
-        </label>
-      </div>
-
-      <div style={{ margin: "10px 0", display: "flex", gap: "20px" }}>
-        <div>
-          <span>QR 전경색</span>
-          <SketchPicker
-            color={qrColor}
-            onChangeComplete={(color: ColorResult) => setQrColor(color.hex)}
-          />
+    <div className="container">
+      <div className="customize-box">
+        <div className="customize-field">
+          <div className="customize-field-title">배경 타입</div>
+          <div className="customize-field-items">
+            <input
+              type="radio"
+              name="template-type"
+              id="type1"
+              checked={template === "template1"}
+              onChange={() => setTemplate("template1")}
+            />
+            <label htmlFor="type1">타입1</label>
+            <input
+              type="radio"
+              name="template-type"
+              id="type2"
+              checked={template === "template2"}
+              onChange={() => setTemplate("template2")}
+            />
+            <label htmlFor="type2">타입2</label>
+          </div>
         </div>
-        <div>
-          <span>QR 배경색</span>
-          <SketchPicker
-            color={bgColor}
-            onChangeComplete={(color: ColorResult) => setBgColor(color.hex)}
-          />
-        </div>
+        <div className="customize-field">크기</div>
+        <button onClick={handleSave}>다운로드</button>
       </div>
-
-      <div style={{ margin: "10px 0" }}>
-        <label>
-          <input
-            type="radio"
-            name="qrShape"
-            value="square"
-            checked={qrShape === "square"}
-            onChange={() => setQrShape("square")}
-          />
-          정사각형
-        </label>
-        <label style={{ marginLeft: "20px" }}>
-          <input
-            type="radio"
-            name="qrShape"
-            value="round"
-            checked={qrShape === "round"}
-            onChange={() => setQrShape("round")}
-          />
-          라운드
-        </label>
-      </div>
-
-      <div style={{ margin: "10px 0", width: "300px" }}>
-        <span>로고 크기 (%): {Math.round(logoSize * 100)}</span>
-        <input
-          type="range"
-          min={0.1}
-          max={0.5}
-          step={0.01}
-          value={logoSize}
-          onChange={(e) => setLogoSize(parseFloat(e.target.value))}
+      <div className="preview-box">
+        <img
+          src={imgSrc}
+          className="preview-image"
+          onDrop={handleDrop}
+          onDragOver={handledragOver}
         />
-      </div>
-
-      <div
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-        style={{
-          border: "2px dashed #999",
-          padding: "20px",
-          width: "400px",
-          textAlign: "center",
-          margin: "10px 0",
-          cursor: "pointer",
-        }}
-      >
-        PDF 드래그 앤 드롭
-        <br />
-        또는
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={handleFileChange}
-        />
-      </div>
-
-      {preview && (
-        <div style={{ margin: "10px 0" }}>
-          <img
-            src={preview}
-            alt="미리보기"
-            style={{ border: "1px solid #000" }}
-          />
+        <div className="qr-code-information">
+          <div>
+            {qrCodeData
+              ? `qr코드 데이터: ${qrCodeData}`
+              : "qr코드를 업로드해 주세요."}
+          </div>
+          <button onClick={() => setQrCodeData(null)}>
+            큐알코드 선택 취소
+          </button>
         </div>
-      )}
-
+      </div>
       <canvas ref={canvasRef} style={{ display: "none" }} />
-
-      {preview && (
-        <button
-          onClick={handleSave}
-          style={{ padding: "10px 20px", fontSize: "16px" }}
-        >
-          PNG 저장
-        </button>
-      )}
     </div>
   );
 };
