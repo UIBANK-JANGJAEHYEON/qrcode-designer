@@ -1,13 +1,28 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .container {
   display: flex;
-  background-color: silver;
+  background-color: yellow;
 }
 
 .customize-box {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.customize-field-item-title {
+.customize-field {
+  outline: 1px solid rgb(230, 230, 230);
+  background-color: white;
+  padding: 10%;
+}
+
+.costomize-field-last {
+  flex-grow: 1;
 }
 
 .preview-box {
@@ -16,6 +31,7 @@
 
 .preview-image {
   max-width: 100%;
+  padding: 5%;
 }
 
 .qr-code-information {

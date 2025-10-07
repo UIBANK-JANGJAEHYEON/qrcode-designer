@@ -278,7 +278,7 @@ const App: React.FC = () => {
             <label htmlFor="type2">타입2</label>
           </div>
         </div>
-        <div className="customize-field">크기</div>
+        <div className="customize-field costomize-field-last">크기</div>
         <button onClick={handleSave}>다운로드</button>
       </div>
       <div className="preview-box">

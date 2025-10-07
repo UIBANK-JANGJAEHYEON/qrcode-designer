@@ -6,7 +6,7 @@ let mainWindow: BrowserWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
+    width: 1000,
     height: 800,
     icon: path.join(__dirname, "../public/assets/icon.png"),
     webPreferences: {
