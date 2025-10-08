@@ -210,6 +210,7 @@ const App: React.FC = () => {
     setQrDotsType("square");
     setQrCornorsSqareType("extra-rounded");
     setShopName("");
+    setShopNameFontSize(100);
     setScale(1);
   };
 
