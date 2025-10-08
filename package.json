@@ -62,14 +62,10 @@
     "vite": "^7.1.8"
   },
   "dependencies": {
-    "html2canvas": "^1.4.1",
     "jsqr": "^1.4.0",
     "pdfjs-dist": "^5.4.149",
     "qr-code-styling": "^1.9.2",
-    "qrcode": "^1.5.4",
-    "rc-slider": "^11.1.9",
     "react": "^19.2.0",
-    "react-color": "^2.19.3",
     "react-dom": "^19.2.0"
   }
 }

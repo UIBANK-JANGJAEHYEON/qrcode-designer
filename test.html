@@ -149,14 +149,6 @@ document.addEventListener('mousemove', e=>{
   updateTransform();
 });
 
-// 드래그 아웃라인 강조 (살짝 튕기는 애니메이션)
-let overlayBounce = {x:0, y:0};
-function animateOverlay(){
-  overlay.style.transform = `translate(${overlayBounce.x}px, ${overlayBounce.y}px)`;
-  requestAnimationFrame(animateOverlay);
-}
-animateOverlay();
-
 function updateDragOverlay(){
   const rect = img.getBoundingClientRect();
   const containerRect = img.parentElement.getBoundingClientRect();
@@ -206,7 +198,6 @@ function updateTransform(){
   const rotY = deltaX * 0.02;
   const rotX = -deltaY * 0.02;
   img.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(${translateZ.value}px) scale(${scale.value})`;
-  img.style.filter = `blur(${blur.value}px) brightness(${brightness.value}) drop-shadow(0 0 0 ${imageTint.value})`;
   updateDragOverlay();
 }
 

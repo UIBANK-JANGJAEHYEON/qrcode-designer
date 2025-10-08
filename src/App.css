@@ -1,4 +1,4 @@
-* {
+/* * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -36,4 +36,187 @@
 
 .qr-code-information {
   display: flex;
+} */
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  color: #fff;
+}
+
+.container {
+  height: 100vh;
+  overflow: hidden;
+  background: #111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1200px;
+}
+
+.scene {
+  position: relative;
+  width: 50%;
+  height: 90%;
+  transform-style: preserve-3d;
+  cursor: default;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scene img {
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  transform: rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1);
+  transition: transform 0.1s ease, filter 0.3s ease;
+  filter: brightness(1) blur(0px);
+  user-select: none;
+  pointer-events: none;
+  position: relative;
+}
+
+.drag-overlay {
+  position: absolute;
+  border: 3px dashed #0f0;
+  border-radius: 25px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.drag-overlay.active {
+  opacity: 1;
+}
+
+.control-card {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  width: 300px;
+  z-index: 9999;
+}
+
+.control-card h3 {
+  margin-top: 0;
+  font-size: 1.1em;
+  text-align: center;
+}
+.control {
+  margin-bottom: 12px;
+}
+.control label {
+  font-size: 0.9em;
+  display: block;
+  margin-bottom: 4px;
+}
+.control input[type="range"],
+.control select,
+.control input[type="color"] {
+  width: 100%;
+}
+
+.toggle-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.toggle-group button {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.toggle-group button.active {
+  background: #0f0;
+  color: #000;
+}
+
+.multi-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.multi-select button {
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.multi-select button.active {
+  background: #0f0;
+  color: #000;
+}
+
+.image-info {
+  font-size: 0.8em;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 6px;
+  border-radius: 6px;
+  margin-top: 6px;
+  text-align: center;
+  word-break: break-word;
+}
+
+.image-info.error {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff3333;
+  border: 1px solid #ff5555;
+  font-weight: bold;
+}
+
+.btn-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 6px;
+}
+.btn-group button {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-group button:hover {
+  background: #0f0;
+  color: #000;
+}
+
+.control input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  outline: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.control input[type="text"]:focus {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 2px #0f0;
+}
+
+.control-card * {
+  box-sizing: border-box;
 }
