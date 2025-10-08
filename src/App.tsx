@@ -254,7 +254,7 @@ const App: React.FC = () => {
     if (code) {
       setQrCodeData(code.data);
     } else {
-      alert("QR 코드를 찾을 수 없습니다.");
+      alert("QRコードが見つかりません。");
     }
   };
 
