@@ -328,21 +328,6 @@ const App: React.FC = () => {
       overlayRef.current.style.height = rect.height + "px";
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!imgRef.current) return;
-
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const deltaX = mouseX - centerX;
-      const deltaY = mouseY - centerY;
-      const rotY = deltaX * 0.02;
-      const rotX = -deltaY * 0.02;
-      imgRef.current.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
-    };
-
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
       setIsDragging(true);
@@ -363,19 +348,44 @@ const App: React.FC = () => {
       if (e.dataTransfer.files.length > 0) handlePdf(e.dataTransfer.files[0]);
     };
 
-    document.body.addEventListener("mousemove", handleMouseMove);
     document.body.addEventListener("dragover", handleDragOver);
     document.body.addEventListener("dragleave", handleDragLeave);
     document.body.addEventListener("drop", handleDrop);
 
     // 언마운트 시 이벤트 제거
     return () => {
-      document.body.removeEventListener("mousemove", handleMouseMove);
       document.body.removeEventListener("dragover", handleDragOver);
       document.body.removeEventListener("dragleave", handleDragLeave);
       document.body.removeEventListener("drop", handleDrop);
     };
   }, []);
+
+  // scale는 scale값이 바뀐 때마다 리스너를 갱신해줘야 잘 작동한다.
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!imgRef.current) return;
+
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const deltaX = mouseX - centerX;
+      const deltaY = mouseY - centerY;
+
+      const rotY = deltaX * 0.03;
+      const rotX = -deltaY * 0.03;
+
+      // scaleRef 대신 scale state 사용
+      imgRef.current.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
+    };
+
+    document.body.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      document.body.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [scale]); // scale이 바뀔 때마다 최신값으로 이벤트 갱신
 
   return (
     <div className="container">
@@ -389,9 +399,9 @@ const App: React.FC = () => {
       </div>
 
       <div className="control-card">
-        <h3>Controls</h3>
+        <h3>コントロール</h3>
         <div className="control">
-          <label htmlFor="scale">Scale</label>
+          <label htmlFor="scale">拡大/縮小</label>
           <input
             type="range"
             id="scale"
@@ -404,29 +414,29 @@ const App: React.FC = () => {
         </div>
 
         <div className="control">
-          <label>배경 타입 선택</label>
+          <label>背景</label>
           <div className="toggle-group">
             <button
               className={template === "template1" ? "active" : ""}
               onClick={() => setTemplate("template1")}
             >
-              타입1
+              タイプ1
             </button>
             <button
               className={template === "template2" ? "active" : ""}
               onClick={() => setTemplate("template2")}
             >
-              타입2
+              タイプ2
             </button>
           </div>
         </div>
 
         <div className="control">
-          <label htmlFor="shopName">가맹점명</label>
+          <label htmlFor="shopName">加盟店名</label>
           <input
             type="text"
             id="shopName"
-            placeholder="가맹점명을 입력해 주세요."
+            placeholder="加盟店名をご入力ください。"
             value={shopName}
             onChange={(e) => setShopName(e.target.value)}
             disabled={!qrCodeData}
@@ -434,7 +444,7 @@ const App: React.FC = () => {
         </div>
 
         <div className="control">
-          <label>QR코드: 점 모양</label>
+          <label>QRコードスタイル（点）</label>
           <div className="toggle-group">
             <button
               className={qrCodeData && qrDotsType === "square" ? "active" : ""}
@@ -485,7 +495,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="control">
-          <label>QR코드: 모서리 모양</label>
+          <label>QRコードスタイル（角）</label>
           <div className="toggle-group">
             <button
               className={
@@ -519,7 +529,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="control">
-          <label htmlFor="logoSize">로고 사이즈</label>
+          <label htmlFor="logoSize">ロゴサイズ</label>
           <input
             type="range"
             id="logoSize"
@@ -533,7 +543,7 @@ const App: React.FC = () => {
         </div>
 
         <div className="control">
-          <label htmlFor="fontSize">글자 사이즈</label>
+          <label htmlFor="fontSize">フォントサイズ</label>
           <input
             type="range"
             id="fontSize"
@@ -555,17 +565,17 @@ const App: React.FC = () => {
           id="imageInfo"
         >
           {qrCodeData
-            ? `QR인식완료: ${qrCodeData}`
-            : "먼저 QR코드 PDF파일을 업로드해 주세요."}
+            ? `QR読取済: ${qrCodeData}`
+            : "PDFファイルをアップロードしてください。"}
         </div>
         <div className="btn-group">
-          <button onClick={clearState}>초기화</button>
+          <button onClick={clearState}>クリア</button>
           <button
             className={`${qrCodeData ? "" : "no-hover"}`}
             onClick={handleSave}
             disabled={!qrCodeData}
           >
-            다운로드
+            ダウンロード
           </button>
         </div>
       </div>

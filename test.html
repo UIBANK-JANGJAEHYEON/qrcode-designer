@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Image with Drag Animation & Controls</title>
+<title>3D Image with Dynamic RGB Lighting</title>
 <style>
 body {
   margin:0; height:100vh; overflow:hidden;
@@ -18,23 +18,39 @@ body {
   width:50%;
   height:90%;
   transform-style: preserve-3d;
-  cursor: default;
-  z-index:1;
+  cursor:default;
   display:flex;
   justify-content:center;
   align-items:center;
+  border-radius:20px;
+  overflow:hidden;
 }
 
 .scene img {
   width:auto; height:100%;
   object-fit:contain;
   border-radius:20px;
-  box-shadow:0 10px 40px rgba(0,0,0,0.5);
+  box-shadow:
+    0 30px 50px rgba(0,0,0,0.6),
+    0 0 80px rgba(255,255,255,0.05) inset;
   transform:rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1);
-  transition: transform 0.1s ease, filter 0.3s ease;
-  filter: brightness(1) blur(0px);
+  transition: transform 0.1s ease, filter 0.2s ease;
+  filter: brightness(1) contrast(1) drop-shadow(0 10px 10px rgba(0,0,0,0.5));
   user-select:none; pointer-events:none;
   position:relative;
+}
+
+/* 반사광 레이어 */
+.scene::after {
+  content:"";
+  position:absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 0%, transparent 70%);
+  opacity:0.3;
+  mix-blend-mode:screen;
+  transition: background-position 0.1s ease, opacity 0.1s ease;
 }
 
 .drag-overlay {
@@ -59,25 +75,8 @@ body {
 .control-card h3 { margin-top:0; font-size:1.1em; text-align:center; }
 .control { margin-bottom:12px; }
 .control label { font-size:0.9em; display:block; margin-bottom:4px; }
-.control input[type='range'], .control select, .control input[type='color'] { width:100%; }
+.control input[type='range'] { width:100%; }
 
-.toggle-group { display:flex; justify-content:space-between; gap:6px; margin-bottom:6px; }
-.toggle-group button { flex:1; padding:6px 0; border:none; border-radius:6px;
-  background: rgba(255,255,255,0.15); color:#fff; cursor:pointer; transition:0.2s;}
-.toggle-group button.active { background:#0f0; color:#000; }
-
-.multi-select { display:flex; flex-wrap:wrap; gap:4px; }
-.multi-select button { padding:4px 6px; border:none; border-radius:6px;
-  background: rgba(255,255,255,0.15); color:#fff; cursor:pointer; transition:0.2s;}
-.multi-select button.active { background:#0f0; color:#000; }
-
-.image-info { font-size:0.8em; background: rgba(0,0,0,0.3);
-  padding:4px 6px; border-radius:6px; margin-top:6px; text-align:center; word-break: break-word; }
-
-.btn-group { display:flex; justify-content:space-between; gap:6px; margin-top:6px; }
-.btn-group button { flex:1; padding:6px 0; border:none; border-radius:6px;
-  background: rgba(255,255,255,0.15); color:#fff; cursor:pointer; transition:0.2s; }
-.btn-group button:hover { background:#0f0; color:#000; }
 </style>
 </head>
 <body>
@@ -88,149 +87,75 @@ body {
 </div>
 
 <div class="control-card">
-  <h3>Image Controls</h3>
+  <h3>3D Controls</h3>
   <div class="control"><label for="translateZ">Depth (Z)</label><input type="range" id="translateZ" min="0" max="200" value="0"></div>
   <div class="control"><label for="scale">Scale</label><input type="range" id="scale" min="0.5" max="2" step="0.01" value="1"></div>
   <div class="control"><label for="blur">Blur</label><input type="range" id="blur" min="0" max="10" step="0.1" value="0"></div>
   <div class="control"><label for="brightness">Brightness</label><input type="range" id="brightness" min="0.5" max="2" step="0.01" value="1"></div>
-  <div class="control">
-    <label for="imageTint">Image Tint</label>
-    <input type="color" id="imageTint" value="#ffffff">
-  </div>
-
-  <!-- 두 개 중 선택 -->
-  <div class="control">
-    <label>Mode 선택 (2개 중 선택)</label>
-    <div class="toggle-group" id="modeToggle">
-      <button data-value="A" class="active">A</button>
-      <button data-value="B">B</button>
-    </div>
-  </div>
-
-  <!-- 여러 개 중 선택 -->
-  <div class="control">
-    <label>Effects 선택 (여러개 선택 가능)</label>
-    <div class="multi-select" id="effectSelect">
-      <button data-value="effect1">Effect1</button>
-      <button data-value="effect2">Effect2</button>
-      <button data-value="effect3">Effect3</button>
-    </div>
-  </div>
-
-  <div class="control image-info" id="imageInfo">이미지 업로드가 필요합니다.</div>
-  <div class="btn-group">
-    <button id="cancelImage">취소</button>
-    <button id="downloadImage">다운로드</button>
-  </div>
 </div>
 
 <script>
 const img = document.getElementById('bgImage');
-const overlay = document.getElementById('dragOverlay');
+const scene = document.getElementById('scene');
 const translateZ = document.getElementById('translateZ');
 const scale = document.getElementById('scale');
 const blur = document.getElementById('blur');
 const brightness = document.getElementById('brightness');
-const imageTint = document.getElementById('imageTint');
-const imageInfo = document.getElementById('imageInfo');
-const cancelImage = document.getElementById('cancelImage');
-const downloadImage = document.getElementById('downloadImage');
 
-const modeToggle = document.getElementById('modeToggle');
-const effectSelect = document.getElementById('effectSelect');
+let mouseX = window.innerWidth/2;
+let mouseY = window.innerHeight/2;
 
-let currentImageSrc = img.src;
-let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
-
-// 마우스 움직임으로 3D 회전
+// 마우스 위치 기반 회전 + RGB 조명
 document.addEventListener('mousemove', e=>{
   mouseX = e.clientX;
   mouseY = e.clientY;
   updateTransform();
 });
 
-function updateDragOverlay(){
-  const rect = img.getBoundingClientRect();
-  const containerRect = img.parentElement.getBoundingClientRect();
-  overlay.style.left = (rect.left - containerRect.left) + 'px';
-  overlay.style.top = (rect.top - containerRect.top) + 'px';
-  overlay.style.width = rect.width + 'px';
-  overlay.style.height = rect.height + 'px';
-
-  // 살짝 흔들리게
-  overlayBounce.x = Math.sin(Date.now()/200) * 2;
-  overlayBounce.y = Math.cos(Date.now()/250) * 2;
-}
-
-// 드래그앤드롭
-document.body.addEventListener('dragover', e=>{
-  e.preventDefault();
-  overlay.classList.add('active');
-  updateDragOverlay();
-});
-document.body.addEventListener('dragleave', e=>{
-  e.preventDefault();
-  overlay.classList.remove('active');
-});
-document.body.addEventListener('drop', e=>{
-  e.preventDefault();
-  overlay.classList.remove('active');
-  const file = e.dataTransfer.files[0];
-  if(file && file.type.startsWith('image/')){
-    const reader = new FileReader();
-    reader.onload = function(event){
-      img.src = event.target.result;
-      imageInfo.textContent = `업로드됨: ${file.name} (${Math.round(file.size/1024)} KB)`;
-      updateDragOverlay();
-    };
-    reader.readAsDataURL(file);
-  } else {
-    imageInfo.textContent = '이미지 파일만 올릴 수 있습니다.';
-  }
-});
-
-// Transform + Filter
 function updateTransform(){
   const centerX = window.innerWidth/2;
   const centerY = window.innerHeight/2;
   const deltaX = mouseX - centerX;
   const deltaY = mouseY - centerY;
-  const rotY = deltaX * 0.02;
-  const rotX = -deltaY * 0.02;
-  img.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(${translateZ.value}px) scale(${scale.value})`;
-  updateDragOverlay();
+
+  const rotY = deltaX * 0.03;
+  const rotX = -deltaY * 0.03;
+
+  const z = translateZ.value;
+  const s = scale.value;
+  const b = brightness.value;
+  const bl = blur.value;
+
+  // 그림자 이동
+  const shadowX = deltaX/centerX*30;
+  const shadowY = deltaY/centerY*30;
+
+  // RGB 조명
+  const r = Math.min(Math.max(128 + deltaX/centerX*127,0),255);
+  const g = Math.min(Math.max(128 + deltaY/centerY*127,0),255);
+  const bRGB = Math.min(Math.max(200 - deltaY/centerY*100,0),255);
+
+  const shadowColor = `rgba(${r},${g},${bRGB},0.25)`;
+
+  // 이미지 transform + filter
+  img.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(${z}px) scale(${s})`;
+  img.style.filter = `
+    brightness(${b})
+    blur(${bl}px)
+    drop-shadow(${shadowX}px ${shadowY}px 20px ${shadowColor})
+  `;
+
+  // 반사광 위치 업데이트
+  const gradientX = 50 + deltaX/centerX*20;
+  const gradientY = 50 + deltaY/centerY*20;
+  scene.style.background = `radial-gradient(circle at ${gradientX}% ${gradientY}%, rgba(${r},${g},${bRGB},0.2), transparent 70%)`;
 }
 
-// 취소 / 다운로드
-cancelImage.addEventListener('click', ()=>{
-  img.src = currentImageSrc;
-  imageInfo.textContent = '이미지 업로드가 필요합니다.';
-  updateDragOverlay();
+// 컨트롤 슬라이더 적용
+[translateZ, scale, blur, brightness].forEach(input=>{
+  input.addEventListener('input', updateTransform);
 });
-downloadImage.addEventListener('click', ()=>{
-  const link = document.createElement('a');
-  link.href = img.src;
-  link.download = 'image.png';
-  link.click();
-});
-
-// Mode 선택 (2개 중)
-modeToggle.querySelectorAll('button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    modeToggle.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
-
-// Effects 선택 (여러개)
-effectSelect.querySelectorAll('button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    btn.classList.toggle('active');
-  });
-});
-
-// 초기 아웃라인
-updateDragOverlay();
 </script>
+
 </body>
 </html>
