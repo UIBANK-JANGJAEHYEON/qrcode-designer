@@ -559,7 +559,11 @@ const App: React.FC = () => {
         </div>
         <div className="btn-group">
           <button onClick={clearState}>초기화</button>
-          <button onClick={handleSave} disabled={!qrCodeData}>
+          <button
+            className={`${qrCodeData ? "" : "no-hover"}`}
+            onClick={handleSave}
+            disabled={!qrCodeData}
+          >
             다운로드
           </button>
         </div>

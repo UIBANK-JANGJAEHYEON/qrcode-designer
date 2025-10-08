@@ -1,43 +1,3 @@
-/* * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.container {
-  display: flex;
-  background-color: yellow;
-}
-
-.customize-box {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.customize-field {
-  outline: 1px solid rgb(230, 230, 230);
-  background-color: white;
-  padding: 10%;
-}
-
-.costomize-field-last {
-  flex-grow: 1;
-}
-
-.preview-box {
-  flex: 2;
-}
-
-.preview-image {
-  max-width: 100%;
-  padding: 5%;
-}
-
-.qr-code-information {
-  display: flex;
-} */
-
 body {
   margin: 0;
   font-family: "Segoe UI", sans-serif;
@@ -141,26 +101,7 @@ body {
   transition: 0.2s;
 }
 .toggle-group button.active {
-  background: #0f0;
-  color: #000;
-}
-
-.multi-select {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.multi-select button {
-  padding: 4px 6px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.multi-select button.active {
-  background: #0f0;
+  background: #00bfff;
   color: #000;
 }
 
@@ -198,8 +139,13 @@ body {
   transition: 0.2s;
 }
 .btn-group button:hover {
-  background: #0f0;
+  background: #00bfff;
   color: #000;
+}
+.btn-group button.no-hover:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+  cursor: not-allowed;
 }
 
 .control input[type="text"] {
@@ -214,7 +160,7 @@ body {
 }
 .control input[type="text"]:focus {
   background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 0 2px #0f0;
+  box-shadow: 0 0 0 2px #00bfff;
 }
 
 .control-card * {
