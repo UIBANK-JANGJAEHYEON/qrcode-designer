@@ -229,7 +229,10 @@ const App: React.FC = () => {
 
   // pdf를 이미지화하고 qr코드를 인식하고 분석하는 것 까지
   const handlePdf = async (file: File) => {
-    if (file.type !== "application/pdf") return;
+    if (file.type !== "application/pdf") {
+      alert("PDFファイルをアップロードしてください。");
+      return;
+    }
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await getDocument({ data: arrayBuffer }).promise;
