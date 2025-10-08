@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>3D Background Image Controller</title>
+<title>3D Image Color Control</title>
 <style>
   body {
     margin: 0;
     height: 100vh;
     overflow: hidden;
-    background: #111;
+    background: #111; /* 전체 배경 */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -18,21 +18,23 @@
     color: #fff;
   }
 
+  /* 이미지 컨테이너 */
   .scene {
-    width: 80%;
-    height: 80%;
+    width: 50%;
+    height: 90%;
     position: relative;
     transform-style: preserve-3d;
     transition: transform 0.1s ease;
-    cursor: grab;
+    cursor: default;
     z-index: 1;
+    background: transparent;
   }
 
   .scene img {
-    width: 100%;
+    width: auto;
     height: 100%;
     object-fit: contain;
-    background-color: #000;
+    background-color: transparent;
     border-radius: 20px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     transform: rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1);
@@ -43,7 +45,6 @@
     position: relative;
   }
 
-  /* 컨트롤 카드는 scene 밖으로 이동, 항상 위에 표시 */
   .control-card {
     position: fixed;
     top: 20px;
@@ -53,7 +54,7 @@
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    width: 250px;
+    width: 260px;
     z-index: 9999;
   }
 
@@ -61,7 +62,7 @@
 
   .control { margin-bottom:12px; }
   .control label { font-size:0.9em; display:block; margin-bottom:4px; }
-  .control input[type='range'], .control select { width:100%; }
+  .control input[type='range'], .control select, .control input[type='color'] { width:100%; }
 
   .toggle-group { display:flex; justify-content:space-between; gap:6px; }
   .toggle-group button {
@@ -102,14 +103,12 @@
 </head>
 <body>
 <div class="scene" id="scene">
-  <img id="bgImage" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80" alt="3D Background" draggable="false" />
+  <img id="bgImage" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80" alt="3D Image" draggable="false" />
 </div>
 
 <div class="control-card">
   <h3>Image Controls</h3>
 
-  <div class="control"><label for="rotateX">Rotate X</label><input type="range" id="rotateX" min="-45" max="45" value="0"></div>
-  <div class="control"><label for="rotateY">Rotate Y</label><input type="range" id="rotateY" min="-45" max="45" value="0"></div>
   <div class="control"><label for="translateZ">Depth (Z)</label><input type="range" id="translateZ" min="0" max="200" value="0"></div>
   <div class="control"><label for="scale">Scale</label><input type="range" id="scale" min="0.5" max="2" step="0.01" value="1"></div>
   <div class="control"><label for="blur">Blur</label><input type="range" id="blur" min="0" max="10" step="0.1" value="0"></div>
@@ -134,6 +133,11 @@
     </select>
   </div>
 
+  <div class="control">
+    <label for="imageTint">Image Tint</label>
+    <input type="color" id="imageTint" value="#ffffff">
+  </div>
+
   <div class="control image-info" id="imageInfo">이미지 업로드가 필요합니다.</div>
 
   <div class="btn-group">
@@ -144,31 +148,42 @@
 
 <script>
 const img = document.getElementById('bgImage');
-const rotateX = document.getElementById('rotateX');
-const rotateY = document.getElementById('rotateY');
 const translateZ = document.getElementById('translateZ');
 const scale = document.getElementById('scale');
 const blur = document.getElementById('blur');
 const brightness = document.getElementById('brightness');
 const fitToggle = document.getElementById('fitToggle');
 const filterPreset = document.getElementById('filterPreset');
+const imageTint = document.getElementById('imageTint');
 const imageInfo = document.getElementById('imageInfo');
 const cancelImage = document.getElementById('cancelImage');
 const downloadImage = document.getElementById('downloadImage');
 const scene = document.getElementById('scene');
 
 let currentImageSrc = img.src;
-let isDragging = false;
-let lastX, lastY;
-let rotX = 0, rotY = 0;
 
-function updateTransform() {
-  img.style.transform = `rotateX(${rotX + parseFloat(rotateX.value)}deg) rotateY(${rotY + parseFloat(rotateY.value)}deg) translateZ(${translateZ.value}px) scale(${scale.value})`;
-  applyFilter();
+// 마우스 위치 기반 회전
+function updateTransform(mouseX=0, mouseY=0) {
+  const centerX = window.innerWidth/2;
+  const centerY = window.innerHeight/2;
+
+  const deltaX = mouseX - centerX;
+  const deltaY = mouseY - centerY;
+
+  const rotY = deltaX * 0.02;
+  const rotX = -deltaY * 0.02;
+
+  img.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(${translateZ.value}px) scale(${scale.value})`;
 }
 
+// 필터 + 색상 적용
 function applyFilter() {
   let filter = `blur(${blur.value}px) brightness(${brightness.value})`;
+  
+  // Tint 색상 적용 (색상 선택)
+  const tintColor = imageTint.value;
+  filter += ` drop-shadow(0 0 0 ${tintColor})`;
+  
   switch(filterPreset.value){
     case 'grayscale': filter+=' grayscale(1)'; break;
     case 'warm': filter+=' sepia(0.3) saturate(1.3)'; break;
@@ -180,9 +195,8 @@ function applyFilter() {
 
 // 슬라이더 이벤트
 document.querySelectorAll('.control input[type="range"]').forEach(input=>{
-  input.addEventListener('input', updateTransform);
+  input.addEventListener('input', ()=>updateTransform());
 });
-filterPreset.addEventListener('change', applyFilter);
 
 // 이미지 fit toggle
 fitToggle.querySelectorAll('button').forEach(btn=>{
@@ -207,12 +221,10 @@ downloadImage.addEventListener('click', ()=>{
   link.click();
 });
 
-// 드래그 앤 드롭 업로드
-document.body.addEventListener('dragover', e=>{ e.preventDefault(); scene.style.outline='2px dashed #0f0'; });
-document.body.addEventListener('dragleave', e=>{ e.preventDefault(); scene.style.outline='none'; });
+// 드래그앤드롭 업로드
+document.body.addEventListener('dragover', e=>{ e.preventDefault(); });
 document.body.addEventListener('drop', e=>{
   e.preventDefault();
-  scene.style.outline='none';
   const file = e.dataTransfer.files[0];
   if(file && file.type.startsWith('image/')){
     const reader = new FileReader();
@@ -226,28 +238,9 @@ document.body.addEventListener('drop', e=>{
   }
 });
 
-// 3D 드래그 회전
-scene.addEventListener('mousedown', e=>{
-  isDragging = true;
-  lastX = e.clientX;
-  lastY = e.clientY;
-  scene.style.cursor='grabbing';
-});
-document.addEventListener('mouseup', e=>{
-  isDragging=false;
-  rotX+=parseFloat(rotateX.value);
-  rotY+=parseFloat(rotateY.value);
-  rotateX.value=0;
-  rotateY.value=0;
-  scene.style.cursor='grab';
-});
+// 마우스 이동 이벤트
 document.addEventListener('mousemove', e=>{
-  if(!isDragging) return;
-  const deltaX = e.clientX - lastX;
-  const deltaY = e.clientY - lastY;
-  rotateY.value = deltaX * 0.5;
-  rotateX.value = -deltaY * 0.5;
-  updateTransform();
+  updateTransform(e.clientX, e.clientY);
 });
 </script>
 </body>
