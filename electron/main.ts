@@ -42,20 +42,21 @@ app.on("window-all-closed", () => {
 
 // ------------------- IPC 핸들러 -------------------
 // Renderer에서 'save-image' 호출 시 이미지 저장
-ipcMain.handle("save-image", async (_, dataUrl: string) => {
+ipcMain.handle("save-image", async (event, dataUrl: string, format: "png" | "jpg" | "pdf", defaultFileName?: string) => {
+  const { filePath } = await dialog.showSaveDialog({
+    title: "保存",
+    defaultPath: defaultFileName ? `${defaultFileName}.${format}` : `qr_code.${format}`,
+    filters: [{ name: format.toUpperCase(), extensions: [format] }],
+  });
+
+  if (!filePath) return { success: false };
+
   try {
-    const buffer = Buffer.from(dataUrl.split(",")[1], "base64");
-
-    const { filePath } = await dialog.showSaveDialog({
-      title: "이미지 저장",
-      defaultPath: "qr-template.png",
-      filters: [{ name: "PNG", extensions: ["png"] }],
-    });
-
-    if (!filePath) return { success: false };
-
-    await fs.promises.writeFile(filePath, buffer);
-    return { success: true };
+    // dataURL -> Buffer
+    const base64Data = dataUrl.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+    fs.writeFileSync(filePath, buffer);
+    return { success: true, filePath };
   } catch (err) {
     console.error(err);
     return { success: false, error: err };

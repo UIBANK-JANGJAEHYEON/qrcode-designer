@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { getDocument, GlobalWorkerOptions, PDFPageProxy } from "pdfjs-dist";
 import QRCodeStyling from "qr-code-styling";
 import jsQR from "jsqr";
+import jsPDF from "jspdf";
 import "./App.css";
 
 // PDF.js 워커 설정 (개발/빌드 환경 모두 안전)
@@ -45,7 +46,6 @@ const App: React.FC = () => {
   const [template, setTemplate] = useState<"template1" | "template2">(
     "template1"
   );
-  // const [qrColor, setQrColor] = useState("#000000");
   const [logoSize, setLogoSize] = useState(0.35);
   const [debouncedLogoSize, setDebouncedLogoSize] = useState(logoSize);
   const [qrDotsType, setQrDotsType] = useState<
@@ -59,6 +59,14 @@ const App: React.FC = () => {
   const [qrCornorsSqareType, setQrCornorsSqareType] = useState<
     "square" | "extra-rounded" | "dot"
   >("square");
+  const [qrDotsColor, setQrDotsColor] = useState("#000000");
+  const [debouncedQrDotsColor, setDebouncedQrDotsColor] = useState(qrDotsColor);
+  const [qrCornorsColor, setQrCornorsColor] = useState("#000000");
+  const [debouncedQrCornorsColor, setDebouncedQrCornorsColor] =
+    useState(qrCornorsColor);
+  const [qrBackgroundColor, setQrBackgroundColor] = useState("#FFFFFF");
+  const [debouncedQrBackgroundColor, setDebouncedQrBackgroundColor] =
+    useState(qrBackgroundColor);
   const [scale, setScale] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
@@ -68,6 +76,9 @@ const App: React.FC = () => {
   const [shopNameFontSize, setShopNameFontSize] = useState(100);
   const [debouncedShopNameFontSize, setDebouncedShopNameFontSize] =
     useState(shopNameFontSize);
+  const [downloadFormat, setDownloadFormat] = useState<"png" | "jpg" | "pdf">(
+    "pdf"
+  );
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -104,15 +115,15 @@ const App: React.FC = () => {
       height: qrSize,
       data: qrCodeData ?? "",
       dotsOptions: {
-        color: "#000000",
+        color: qrDotsColor,
         type: qrDotsType,
       },
       cornersSquareOptions: {
         type: qrCornorsSqareType,
-        color: "#000000",
+        color: qrCornorsColor,
       },
       backgroundOptions: {
-        color: "#FFFFFF",
+        color: qrBackgroundColor,
       },
       qrOptions: {
         errorCorrectionLevel: "H",
@@ -211,20 +222,34 @@ const App: React.FC = () => {
     setQrCornorsSqareType("extra-rounded");
     setShopName("");
     setShopNameFontSize(100);
+    setQrDotsColor("#000000");
+    setQrCornorsColor("#000000");
+    setQrBackgroundColor("#FFFFFF");
+    setDownloadFormat("pdf");
     setScale(1);
   };
 
-  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (e.target.files && e.target.files[0]) handlePdf(e.target.files[0]);
-  // };
-
   // 이미지 저장
-  const handleSave = () => {
-    if (qrCodeData === null) {
-      return;
-    }
+  const handleSave = async () => {
+    if (!qrCodeData || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const defaultName = shopName || "qr_code";
 
-    window.electronAPI.saveImage(imgSrc);
+    if (downloadFormat === "png" || downloadFormat === "jpg") {
+      const mime = downloadFormat === "png" ? "image/png" : "image/jpeg";
+      const dataUrl = canvas.toDataURL(mime, 1.0);
+      await window.electronAPI.saveImage(dataUrl, downloadFormat, defaultName);
+    } else if (downloadFormat === "pdf") {
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height],
+      });
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      const pdfDataUrl = pdf.output("datauristring");
+      await window.electronAPI.saveImage(pdfDataUrl, "pdf", defaultName);
+    }
   };
 
   // pdf를 이미지화하고 qr코드를 인식하고 분석하는 것 까지
@@ -276,7 +301,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedShopName(shopName);
-    }, 200); // 200ms 동안 멈춰야 업데이트
+    }, 100); // 100ms 동안 멈춰야 업데이트
 
     return () => clearTimeout(handler);
   }, [shopName]);
@@ -285,7 +310,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedLogoSize(logoSize);
-    }, 200); // 200ms 동안 멈춰야 업데이트
+    }, 100); // 100ms 동안 멈춰야 업데이트
 
     return () => clearTimeout(handler);
   }, [logoSize]);
@@ -294,10 +319,37 @@ const App: React.FC = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedShopNameFontSize(shopNameFontSize);
-    }, 200); // 200ms 동안 멈춰야 업데이트
+    }, 100); // 100ms 동안 멈춰야 업데이트
 
     return () => clearTimeout(handler);
   }, [shopNameFontSize]);
+
+  // 큐알 점 색 변경이 너무 자주 일어나면 무거우니까 디바운스 처리
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQrDotsColor(qrDotsColor);
+    }, 100); // 100ms 동안 멈춰야 업데이트
+
+    return () => clearTimeout(handler);
+  }, [qrDotsColor]);
+
+  // 큐알 코너 색 변경이 너무 자주 일어나면 무거우니까 디바운스 처리
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQrCornorsColor(qrCornorsColor);
+    }, 100); // 100ms 동안 멈춰야 업데이트
+
+    return () => clearTimeout(handler);
+  }, [qrCornorsColor]);
+
+  // 큐알 배경 색 변경이 너무 자주 일어나면 무거우니까 디바운스 처리
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQrBackgroundColor(qrBackgroundColor);
+    }, 100); // 100ms 동안 멈춰야 업데이트
+
+    return () => clearTimeout(handler);
+  }, [qrBackgroundColor]);
 
   // 각 값들이 바뀌면 프리뷰 이미지를 갱신을 위해.
   useEffect(() => {
@@ -310,6 +362,9 @@ const App: React.FC = () => {
     qrDotsType,
     debouncedShopName,
     debouncedShopNameFontSize,
+    debouncedQrDotsColor,
+    debouncedQrCornorsColor,
+    debouncedQrBackgroundColor,
   ]);
 
   // 컴포넌트 초기 렌더링시에 등록할 이벤트 리스너. 마우스 이동에 따른 회전, 마우스 드래그, 드래그 앤 드롭
@@ -363,14 +418,29 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // scale는 scale값이 바뀐 때마다 리스너를 갱신해줘야 잘 작동한다.
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!imgRef.current) return;
 
+      // 마우스가 컨트롤 패널 위에 있는지 확인
+      const controlCard = document.querySelector(".control-card");
+      if (controlCard) {
+        const rect = controlCard.getBoundingClientRect();
+        if (
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom
+        ) {
+          // 컨트롤 패널 위면 정면 고정
+          imgRef.current.style.transform = `rotateX(0deg) rotateY(0deg) scale(${scale})`;
+          return;
+        }
+      }
+
+      // 컨트롤 패널 밖이면 기존 회전 로직 적용
       const mouseX = e.clientX;
       const mouseY = e.clientY;
-
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       const deltaX = mouseX - centerX;
@@ -379,16 +449,14 @@ const App: React.FC = () => {
       const rotY = deltaX * 0.03;
       const rotX = -deltaY * 0.03;
 
-      // scaleRef 대신 scale state 사용
       imgRef.current.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
     };
 
     document.body.addEventListener("mousemove", handleMouseMove);
-
     return () => {
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [scale]); // scale이 바뀔 때마다 최신값으로 이벤트 갱신
+  }, [scale]);
 
   return (
     <div className="container">
@@ -401,8 +469,9 @@ const App: React.FC = () => {
         ></div>
       </div>
 
-      <div className="control-card">
+      <div className={`control-card ${qrCodeData ? "" : "disabled"}`}>
         <h3>コントロール</h3>
+
         <div className="control">
           <label htmlFor="scale">拡大/縮小</label>
           <input
@@ -416,17 +485,30 @@ const App: React.FC = () => {
           />
         </div>
 
+        <div
+          className={`control image-info ${qrCodeData ? "" : "error"}`}
+          id="imageInfo"
+        >
+          {qrCodeData
+            ? `QR読取済: ${qrCodeData}`
+            : "QRコードを含むPDFファイルをドラッグ＆ドロップしてください。"}
+        </div>
+
         <div className="control">
           <label>背景</label>
           <div className="toggle-group">
             <button
-              className={template === "template1" ? "active" : ""}
+              className={`exclude-hover ${
+                template === "template1" ? "active" : ""
+              }`}
               onClick={() => setTemplate("template1")}
             >
               タイプ1
             </button>
             <button
-              className={template === "template2" ? "active" : ""}
+              className={`exclude-hover ${
+                template === "template2" ? "active" : ""
+              }`}
               onClick={() => setTemplate("template2")}
             >
               タイプ2
@@ -435,19 +517,7 @@ const App: React.FC = () => {
         </div>
 
         <div className="control">
-          <label htmlFor="shopName">加盟店名</label>
-          <input
-            type="text"
-            id="shopName"
-            placeholder="加盟店名をご入力ください。"
-            value={shopName}
-            onChange={(e) => setShopName(e.target.value)}
-            disabled={!qrCodeData}
-          />
-        </div>
-
-        <div className="control">
-          <label>QRコードスタイル（点）</label>
+          <label>QRスタイル（点）</label>
           <div className="toggle-group">
             <button
               className={qrCodeData && qrDotsType === "square" ? "active" : ""}
@@ -498,7 +568,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="control">
-          <label>QRコードスタイル（角）</label>
+          <label>QRスタイル（角）</label>
           <div className="toggle-group">
             <button
               className={
@@ -531,6 +601,55 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
+
+        <div className="control">
+          <label>QR色</label>
+          <div className="color-group">
+            <div className="color-item">
+              <span>点</span>
+              <input
+                type="color"
+                list="presetColors"
+                value={qrDotsColor}
+                disabled={!qrCodeData}
+                onChange={(e) => setQrDotsColor(e.target.value)}
+              />
+            </div>
+            <div className="color-item">
+              <span>角</span>
+              <input
+                type="color"
+                list="presetColors"
+                value={qrCornorsColor}
+                disabled={!qrCodeData}
+                onChange={(e) => setQrCornorsColor(e.target.value)}
+              />
+            </div>
+            <div className="color-item">
+              <span>背景</span>
+              <input
+                type="color"
+                list="presetColors"
+                value={qrBackgroundColor}
+                disabled={!qrCodeData}
+                onChange={(e) => setQrBackgroundColor(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <datalist id="presetColors">
+            <option value="#ffffff">White</option>
+            <option value="#ff6666">Red</option>
+            <option value="#ffcc66">Orange</option>
+            <option value="#ffff66">Yellow</option>
+            <option value="#66ff66">Green</option>
+            <option value="#66ccff">Blue</option>
+            <option value="#cc99ff">Purple</option>
+            <option value="#ff99cc">Pink</option>
+            <option value="#cccccc">Gray</option>
+          </datalist>
+        </div>
+
         <div className="control">
           <label htmlFor="logoSize">ロゴサイズ</label>
           <input
@@ -542,6 +661,18 @@ const App: React.FC = () => {
             value={logoSize}
             disabled={!qrCodeData}
             onChange={(e) => setLogoSize(Number(e.target.value))}
+          />
+        </div>
+
+        <div className="control">
+          <label htmlFor="shopName">加盟店名</label>
+          <input
+            type="text"
+            id="shopName"
+            placeholder="加盟店名をご入力ください。"
+            value={shopName}
+            onChange={(e) => setShopName(e.target.value)}
+            disabled={!qrCodeData}
           />
         </div>
 
@@ -559,25 +690,38 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* <div className="control">
-          <label htmlFor="imageTint">QR코드 색상 변경</label>
-          <input type="color" id="imageTint" value="#ffffff" />
-        </div> */}
-        <div
-          className={`control image-info ${qrCodeData ? "" : "error"}`}
-          id="imageInfo"
-        >
-          {qrCodeData
-            ? `QR読取済: ${qrCodeData}`
-            : "PDFファイルをアップロードしてください。"}
+        <div className="control">
+          <label>ダウンロード形式</label>
+          <div className="toggle-group format-toggle">
+            <button
+              className={qrCodeData && downloadFormat === "png" ? "active" : ""}
+              onClick={() => setDownloadFormat("png")}
+              disabled={!qrCodeData}
+            >
+              PNG
+            </button>
+            <button
+              className={qrCodeData && downloadFormat === "jpg" ? "active" : ""}
+              onClick={() => setDownloadFormat("jpg")}
+              disabled={!qrCodeData}
+            >
+              JPG
+            </button>
+            <button
+              className={qrCodeData && downloadFormat === "pdf" ? "active" : ""}
+              onClick={() => setDownloadFormat("pdf")}
+              disabled={!qrCodeData}
+            >
+              PDF
+            </button>
+          </div>
         </div>
+
         <div className="btn-group">
-          <button onClick={clearState}>クリア</button>
-          <button
-            className={`${qrCodeData ? "" : "no-hover"}`}
-            onClick={handleSave}
-            disabled={!qrCodeData}
-          >
+          <button className="exclude-hover" onClick={clearState}>
+            クリア
+          </button>
+          <button onClick={handleSave} disabled={!qrCodeData}>
             ダウンロード
           </button>
         </div>

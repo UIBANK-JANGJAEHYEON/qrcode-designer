@@ -57,6 +57,7 @@
     "vite": "^7.1.8"
   },
   "dependencies": {
+    "jspdf": "^3.0.3",
     "jsqr": "^1.4.0",
     "pdfjs-dist": "^5.4.149",
     "qr-code-styling": "^1.9.2",

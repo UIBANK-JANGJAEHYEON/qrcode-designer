@@ -77,6 +77,37 @@ body {
 .control label { font-size:0.9em; display:block; margin-bottom:4px; }
 .control input[type='range'] { width:100%; }
 
+.color-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.color-group input[type="color"] {
+  flex: 1;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: none;
+  appearance: none;
+  outline: 1px solid rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.color-group input[type="color"]:hover {
+  transform: scale(1.05);
+}
+
+.color-group input[type="color"]::-webkit-color-swatch {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.color-group input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
 </style>
 </head>
 <body>
@@ -92,6 +123,29 @@ body {
   <div class="control"><label for="scale">Scale</label><input type="range" id="scale" min="0.5" max="2" step="0.01" value="1"></div>
   <div class="control"><label for="blur">Blur</label><input type="range" id="blur" min="0" max="10" step="0.1" value="0"></div>
   <div class="control"><label for="brightness">Brightness</label><input type="range" id="brightness" min="0.5" max="2" step="0.01" value="1"></div>
+  <div class="control">
+  <label>Light Color</label>
+<div class="control">
+  <label>Light Colors</label>
+  <div class="color-group">
+    <input type="color" list="presetColors" value="#ffffff" />
+    <input type="color" list="presetColors" value="#66ccff" />
+    <input type="color" list="presetColors" value="#ff99cc" />
+  </div>
+
+  <datalist id="presetColors">
+    <option value="#ffffff">White</option>
+    <option value="#ff6666">Red</option>
+    <option value="#ffcc66">Orange</option>
+    <option value="#ffff66">Yellow</option>
+    <option value="#66ff66">Green</option>
+    <option value="#66ccff">Blue</option>
+    <option value="#cc99ff">Purple</option>
+    <option value="#ff99cc">Pink</option>
+    <option value="#cccccc">Gray</option>
+  </datalist>
+</div>
+</div>
 </div>
 
 <script>

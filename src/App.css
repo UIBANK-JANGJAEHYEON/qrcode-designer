@@ -1,3 +1,6 @@
+/* ============================
+   기본 스타일
+   ============================ */
 body {
   margin: 0;
   font-family: "Segoe UI", sans-serif;
@@ -67,17 +70,20 @@ body {
 
 .control-card h3 {
   margin-top: 0;
-  font-size: 1.1em;
+  font-size: 1em;
   text-align: center;
 }
+
 .control {
   margin-bottom: 12px;
 }
+
 .control label {
-  font-size: 0.9em;
+  font-size: 0.8em;
   display: block;
   margin-bottom: 4px;
 }
+
 .control input[type="range"],
 .control select,
 .control input[type="color"] {
@@ -90,6 +96,7 @@ body {
   gap: 6px;
   margin-bottom: 6px;
 }
+
 .toggle-group button {
   flex: 1;
   padding: 6px 0;
@@ -100,13 +107,14 @@ body {
   cursor: pointer;
   transition: 0.2s;
 }
+
 .toggle-group button.active {
   background: #00bfff;
   color: #000;
 }
 
 .image-info {
-  font-size: 0.8em;
+  font-size: 0.6em;
   background: rgba(0, 0, 0, 0.3);
   padding: 4px 6px;
   border-radius: 6px;
@@ -128,6 +136,7 @@ body {
   gap: 6px;
   margin-top: 6px;
 }
+
 .btn-group button {
   flex: 1;
   padding: 6px 0;
@@ -137,15 +146,6 @@ body {
   color: #fff;
   cursor: pointer;
   transition: 0.2s;
-}
-.btn-group button:hover {
-  background: #00bfff;
-  color: #000;
-}
-.btn-group button.no-hover:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #fff !important;
-  cursor: not-allowed;
 }
 
 .control input[type="text"] {
@@ -158,6 +158,7 @@ body {
   outline: none;
   transition: background 0.2s, box-shadow 0.2s;
 }
+
 .control input[type="text"]:focus {
   background: rgba(255, 255, 255, 0.2);
   box-shadow: 0 0 0 2px #00bfff;
@@ -165,4 +166,78 @@ body {
 
 .control-card * {
   box-sizing: border-box;
+}
+
+.color-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.color-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-item span {
+  font-size: 0.7em;
+  color: #ddd;
+}
+
+.color-item input[type="color"] {
+  width: 100%;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  appearance: none;
+  cursor: pointer;
+  outline: 1px solid rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s ease, outline-color 0.2s ease;
+}
+
+.color-item input[type="color"]::-webkit-color-swatch {
+  border-radius: 8px;
+  border: none;
+}
+
+.color-item input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+/* ============================
+   1️⃣ 기본 hover: 모든 요소
+   ============================ */
+.control-card button:hover,
+.control-card input[type="range"]:hover,
+.control-card input[type="color"]:hover,
+.control-card input[type="text"]:hover {
+  background: #00bfff;
+  color: #000;
+  transform: scale(1.05);
+  cursor: pointer;
+  outline-color: #00bfff;
+}
+
+/* ============================
+   2️⃣ disabled hover 무효화 (제외 대상 제외)
+   ============================ */
+.control-card.disabled button:not(.exclude-hover):hover,
+.control-card.disabled input[type="range"]:not(#scale):hover,
+.control-card.disabled input[type="color"]:hover,
+.control-card.disabled input[type="text"]:hover {
+  transform: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  outline-color: rgba(255, 255, 255, 0.3);
+  color: #fff !important;
+}
+
+.format-toggle button {
+  font-weight: bold;
+  font-size: 0.7em;
 }
